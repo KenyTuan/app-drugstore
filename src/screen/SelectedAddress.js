@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, TouchableHighlight, TouchableOpacity } from 'react-native';
 
-export default function AreaScreen({navigation, route}) {
+export default function SelectedAddress({navigation, route}) {
   const titleSelected = ['Tỉnh/Thành Phố',"Quận/Huyện", "Phường/Xã"]
   const receivedData = route.params?.data
   const [provinces, setProvinces] = React.useState([]);
@@ -10,7 +10,6 @@ export default function AreaScreen({navigation, route}) {
   const [selected,setSelected] = React.useState(receivedData?[receivedData[0].province_name,receivedData[1].district_name, receivedData[2].ward_name] : []);
   const [newSelected,setNewSelected] = React.useState((route.params?.data)? 2 : 0);
   const [data, setData] = React.useState(route.params?.data || null)
-
   const fetchProvinces = async () => {
     try {
       const response = await fetch('https://vapi.vnappmob.com/api/province');
@@ -58,7 +57,6 @@ export default function AreaScreen({navigation, route}) {
   React.useEffect(() => {
     fetchProvinces();
     if(data){
-      console.log("data",data)
       fetchDistrict(data[0].province_id);
       fetchWard(data[1].district_id)
     }
@@ -75,14 +73,18 @@ export default function AreaScreen({navigation, route}) {
     setNewSelected(2);
     setSelected([selected[0],district.district_name, "Chọn " + titleSelected[newSelected+1]])
     setData([data[0], district])
+    console.log("data",data)
     fetchWard(district.district_id);
   }
 
   const handleSelectedWard = ( ward ) => {
     selected[2] = ward.ward_name
-    setData([data[0], data[1],ward])
     data.push(ward)
-    navigation.replace('AddAddress', { data: data });
+    receiver = route.params.receiver
+    const temp = receiver.address.split(", ")
+    receiver.address = temp[0] + ", " + ward.ward_name + ", " + data[1].district_name+", " + data[0].province_name
+    console.log("receiver",temp[0] + ", " + ward.ward_name + ", " + data[1].district_name+", " + data[0].province_name)
+    navigation.replace('EditAddress', { receiver });
   }
 
   const handleSelectedItem = (index) =>{

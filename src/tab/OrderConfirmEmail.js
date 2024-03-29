@@ -1,11 +1,9 @@
-import { FontAwesome5 } from '@expo/vector-icons';
-import React, { useEffect } from 'react'
-import { View, Image, Text, TouchableOpacity, FlatList } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import React, { useEffect } from 'react'
+import { View, Image, Text, TouchableOpacity, FlatList } from 'react-native'
 
-
-export default function OrderApprovedTab() {
+export default function OrderConfirmEmail() {
 
   const [data,setData] = React.useState([])
   const readToken = async () => {
@@ -17,6 +15,27 @@ export default function OrderApprovedTab() {
         return null;
     }
   };
+
+  const handleDelete = async (id)=>{
+    const storedToken = await readToken();
+    console.log("ud",id)
+    try{
+        const res = await axios.get(`https://test5.nhathuoc.storeapi/orders/cancel/${id}`,
+        {
+            headers:{
+                'Authorization': `Bearer ${storedToken}`,
+                'Content-Type': 'application/json',
+            }
+        })
+        console.log("res",res)
+
+        if(res.data.status_code == 200){
+        }
+        return;
+    }catch(error){
+        console.error("error",error)
+    }
+  }
 
   const getData = async() =>{
     try{
@@ -32,7 +51,7 @@ export default function OrderApprovedTab() {
 
         const data_filter = res.data.data.filter(
           (product)=>{
-            if(product.status === 2) {
+            if(product.status === 1) {
               return  product
             }else{
               return;
@@ -62,13 +81,11 @@ export default function OrderApprovedTab() {
     }, []
   )
 
-  console.log("data",data)
-
-
   const renderItem = ({ item }) => (
     <View style={{
       width: "100%",
-      marginBottom: 10,
+      marginBottom: 8,
+      backgroundColor: "#FFF"
     }}>
       <View style={{
         padding: 15,
@@ -87,40 +104,42 @@ export default function OrderApprovedTab() {
             {item.order_date}
           </Text>
           <Text style={{
-              fontSize: 20,
+              fontSize: 18,
               opacity: 0.5,
               fontWeight: "600",
-              textAlign: "right",
-              padding: 5
+              textAlign: "right"
           }}>
             {item.totalPrice}
           </Text>
       </View>
-      <View style={{padding: 10, justifyContent: "flex-end",borderTopWidth: 0.5,borderBottomWidth: 0.5,opacity: 0.5, flexDirection: "row"}}>
-        <Text style={{fontSize: 18, fontStyle: "italic"}}>Đang Giao Hàng....</Text>
-        <FontAwesome5 name="shipping-fast" size={24} color="black" style={{opacity: 0.5,}} />
+      <View style={{padding: 10, alignItems: "flex-start",borderTopWidth: 0.5,borderBottomWidth: 0.5,opacity: 0.5}}>
+        <Text style={{fontSize: 18, fontStyle: "italic"}}>{item.status_content}....</Text>
+      </View>
+      <View style={{padding: 5, alignItems: "flex-end"}}>
+        <TouchableOpacity style={{backgroundColor: "#0198d7", padding: 10, paddingHorizontal: 25, borderRadius: 5,}} 
+            onPress={() => handleDelete(item.id)}>
+          <Text style={{fontSize: 18, fontWeight: "500", color: "#FFF"}}>Hủy Đơn</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
-
+  
   return (
     <View style={{ flex: 1, backgroundColor: '#eee', padding: 5, }} >
-      <View 
-      style={{
-        padding: 5,
-        backgroundColor: "#FFF",
-        elevation: 2,
-        marginBottom: 10
-      }}>
-      <FlatList
-        data={data}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        contentContainerStyle={{ paddingVertical: 10,width: "100%" }}
-      />
-    </View>
-
+      <View style={{
+              padding: 5,
+              backgroundColor: "#FFF",
+              elevation: 2,
+              marginBottom: 10
+          }}>
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={true}
+            contentContainerStyle={{ marginVertical: 10, width: "100%", backgroundColor: "#CCC",}}
+          />
+      </View>
     </View>
   )
 }

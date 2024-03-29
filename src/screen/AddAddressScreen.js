@@ -1,25 +1,63 @@
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 export default function AddAddressScreen({navigation , route}) {
-
   const [name, setName] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [address, setAddress] = React.useState('');
   const [area, setArea] = React.useState(route.params?.data);
   const [apply,setApply] = React.useState(false);
-
-  console.log(area)
+  const [password, setPassword] = React.useState('');
 
   React.useEffect(() => {
-    const areFieldsFilled = name.trim() !== '' && phone.trim() !== '' && address.trim() !== '';
+    const areFieldsFilled = name.trim() !== '' && phone.trim() !== '' && address.trim() !== '' && password.trim();
     setApply(areFieldsFilled);
-  }, [name, phone, address]);
+  }, [name, phone, address,password]);
 
   React.useEffect(() => {
     setArea(route.params?.data);
   }, [route.params?.data]);
+
+  const readToken = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('token');
+      return storedToken;
+    } catch (error) {
+      console.error('Error reading token:', error);
+      return null;
+    }
+  };
+
+  const handleSubmit = async ()=>{
+    const storedToken = await readToken();
+    try{
+        const res = await axios.post(`https://test5.nhathuoc.store/api/users/add-address`,
+        {
+          receiver_name: name,
+          phone: phone,
+          address: address + ", " + area[2].ward_name + ", " + area[1].district_name + ", " +  area[0].province_name,
+          confirm_password: password
+        },
+        {
+            headers:{
+                'Authorization': `Bearer ${storedToken}`,
+                'Content-Type': 'application/json',
+            }
+        })
+
+        if(res.data.status_code == 200){
+          navigation.navigate("Address")
+        }
+        console.log("res",res)
+        return;
+    }catch(error){
+        console.error("error",error)
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: "#EEEEEE", }}>
       <Text style={{padding: 10,}}>
@@ -50,6 +88,20 @@ export default function AddAddressScreen({navigation , route}) {
         placeholder='Số điện thoại'
         value={phone}
         onChangeText={(text) => setPhone(text)}
+        keyboardType='numeric'
+      />
+      <TextInput
+        style={{
+          backgroundColor: "#FFF",
+          padding: 10,
+          borderWidth: 1,
+          fontSize: 18,
+          borderColor: "#EEEEEE",
+          marginBottom: 0.5,
+        }}
+        placeholder='Xác thực mật khẩu'
+        value={password}
+        onChangeText={(text) => setPassword(text)}
         keyboardType='numeric'
       />
       <Text style={{padding: 10,}}>
@@ -84,16 +136,15 @@ export default function AddAddressScreen({navigation , route}) {
               </Text>
             </View>
           ):(
-            <View style={{flex: 1,}}>
-              <Text style={{
-                fontSize: 16,
-                paddingBottom: 5,
-              }}>
-                Chọn khu vực 
-              </Text>
-          </View>
+              <View style={{flex: 1,}}>
+                <Text style={{
+                  fontSize: 16,
+                  paddingBottom: 5,
+                }}>
+                  Chọn khu vực 
+                </Text>
+              </View>
               )}
-                
             <View style={{justifyContent: "center"}}>
               <AntDesign name="right" size={24}  color="black" />
             </View>
@@ -114,7 +165,9 @@ export default function AddAddressScreen({navigation , route}) {
         onChangeText={(text) => setAddress(text)}
       />
 
-      <TouchableOpacity  onPress={()=>{navigation.navigate("Address")}} disabled={!apply}>
+      <TouchableOpacity  
+        onPress={handleSubmit}
+        disabled={!apply}>
         <View style={{
             backgroundColor: (apply)? "#0198d7" : "#ddd",
             padding: 10,

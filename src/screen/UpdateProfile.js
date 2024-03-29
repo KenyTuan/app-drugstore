@@ -2,71 +2,73 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,Modal ,Pressable, ScrollView, Button } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 import DatePicker from 'react-native-neat-date-picker'
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const RegisterScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
+export default function UpdateProfile({navigation,route}) {
+  const [fullName, setFullName] = useState(route.params.data.fullname? route.params.data.fullname : '');
   const [email, setEmail] = useState('');
-  const [gender,setGender] = useState(1);
-  const [password, setPassword] = useState('');
+  const [gender,setGender] = useState(route.params.data.gender);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [formValid, setFormValid] = useState('');
   const [formSuccess, setFormSucess] = useState('');
   const [success, setSuccess] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [date, setDate] = useState('')
+  const [phone, setPhone] = useState(route.params.data.fullname? route.params.data.phone : '');
+  const [address, setAddress] = useState(route.params.data.fullname? route.params.data.fullname : '');
+  const [date, setDate] = useState(route.params.data.fullname? route.params.data.birthday : '')
   const [showDatePickerSingle, setShowDatePickerSingle] = useState(false)
   const openDatePickerSingle = () => setShowDatePickerSingle(true)
 
-  const handleRegister = async () => {
-    const data = 
-      {
-        email: email,
-        fullname: fullName,
-        gender: gender,
-        password: password,
-        confirm_password: confirmPassword, 
-        phone: phone,
-        birthday: date,
-      }
-    
-    const response = await postData("https://test5.nhathuoc.store/api/users/register", data);
-
-    if(response.status_code == 200){
-      setFormSucess(response.message)
-      setFormValid(null)
-      setSuccess(true)
-      console.log(response.message)
-      return;
+    const readToken = async () => {
+        try {
+            const storedToken = await AsyncStorage.getItem('token');
+            return storedToken;
+        } catch (error) {
+            console.error('Error reading token:', error);
+            return null;
+        }
+      };
+      
+      const handleSubmit = async ()=>{
+        const storedToken = await readToken();
+          try{
+              const res = await axios.put(`https://test5.nhathuoc.store/api/users/change-profile`,
+              {
+                fullname: fullName,
+                gender: gender,
+                confirm_password: confirmPassword, 
+                phone: phone,
+                birthday: date,
+              },
+              {
+                  headers:{
+                      'Authorization': `Bearer ${storedToken}`,
+                      'Content-Type': 'application/json',
+                  }
+              })
+      
+              if(res.data.status_code == 200){
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Home' }], 
+              });
+              }
+              console.log("res",res)
+              return;
+          }catch(error){
+              console.error("error",error)
+          }
+        }
+    const onCancelSingle = () => {
+      setShowDatePickerSingle(false)
     }
-
-    const dataRes = response.data
-    console.log(dataRes)
-    setFormValid(dataRes[0]);
-
-  };
-
-  async function postData(url, data = {}) {
-    const response = await fetch(url, {
-      method: "POST", 
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data), 
-    });
-
-    return response.json();
-  }
-
-  const onCancelSingle = () => {
-    setShowDatePickerSingle(false)
-  }
-
-  const onConfirmSingle = (output) => {
-    setShowDatePickerSingle(false)
-    console.log(output)
-    setDate(output.dateString)
-  }
+  
+    const onConfirmSingle = (output) => {
+      setShowDatePickerSingle(false)
+      console.log(output)
+      setDate(output.dateString)
+    }
+      
 
   return (
     <ScrollView >
@@ -98,40 +100,12 @@ const RegisterScreen = ({ navigation }) => {
             </View>
           </View>
       </Modal>
-      <View style={{ 
-          flexDirection: "row",
-          marginBottom: 25, 
-          padding: 50, 
-          backgroundColor: "#2196F3",
-          width: "100%" ,
-          alignItems: "center", 
-          justifyContent: "center", 
-          elevation: 5,
-          borderWidth: 1,
-          }}>
-          <Text style={{
-            fontSize: 36, 
-            color: "white", 
-            fontWeight: 600
-            }}>
-              Medicine
-          </Text>
-          <Text style={{
-            fontSize: 28, 
-            color: "green", 
-            fontWeight: 600
-            }}>
-              Mart
-          </Text>
-      </View>
       <View style={{
           width: "100%",
           justifyContent: 'space-evenly',
           alignItems: 'center',
           padding: 20,
           }} >
-
-        <Text style={styles.title}>Đăng Ký</Text>
         {
           formValid &&
             <Text style={{color: "red", opacity: 0.5, marginBottom: 5, fontSize: 18,fontWeight: 500}}>{formValid}</Text>
@@ -151,37 +125,14 @@ const RegisterScreen = ({ navigation }) => {
           backgroundColor: "white",
           }}>
           <RNPickerSelect
-              onValueChange={(value) => setGender(value)}
-              value={gender}
-              items={[
-                  { label: 'Nam', value: 1 },
-                  { label: 'Nữ', value: 0 },
-              ]}
+            onValueChange={(value) => setGender(value)}
+            value={gender}
+            items={[
+              { label: 'Nam', value: 1 },
+              { label: 'Nữ', value: 0 },
+            ]}
           />
         </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={text => setEmail(text)}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Mật khẩu"
-          secureTextEntry
-          value={password}
-          onChangeText={text => setPassword(text)}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Xác nhận mật khẩu"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={text => setConfirmPassword(text)}
-        />
-
         <TextInput
             style={styles.input}
             placeholder="Số Điện Thoại"
@@ -202,23 +153,27 @@ const RegisterScreen = ({ navigation }) => {
           <Text style={{
             fontSize: 20,
             opacity: 0.5
-          }}>{!date?"Nhập Ngày Xin":date}</Text>
+          }}>{!date?"Nhập Ngày Sinh":date}</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Đăng Ký</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{    borderColor: "#2196F3",borderWidth: 1,width: "100%", justifyContent: 'center', alignItems: "center",paddingVertical: 10,}}>
-          <Text style={styles.linkText}>Quay lại</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Xác nhận mật khẩu"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={text => setConfirmPassword(text)}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+          <Text style={styles.buttonText}>Cập Nhật</Text>
         </TouchableOpacity>
       </View>
-      <View>
 
+      <View>
       </View>
     </View>
     </ScrollView>
-  );
-};
+  )
+}
+
 
 const styles = StyleSheet.create({
   container: {
@@ -311,5 +266,3 @@ const stylesModal = StyleSheet.create({
     fontSize: 22
   },
 });
-
-export default RegisterScreen;

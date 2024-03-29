@@ -28,8 +28,8 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
-    const dataRes = response.data
-    setFormValid(dataRes[0]);
+    const dataRes = response.message
+    setFormValid(dataRes);
   };
 
   async function postData(url, data = {}) {
@@ -106,7 +106,8 @@ const LoginScreen = ({ navigation }) => {
         }
         <TextInput
           style={styles.input}
-          placeholder="Tên đăng nhập"
+          placeholder="Email"
+          keyboardType='email-address'
           value={username}
           onChangeText={text => setUsername(text)}
         />

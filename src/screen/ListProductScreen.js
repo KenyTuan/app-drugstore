@@ -1,6 +1,6 @@
 import React from 'react';
 import {PanResponder, Animated, TouchableOpacity, View, Text, ScrollView, FlatList, TouchableHighlight, Image, Modal, Pressable, TouchableWithoutFeedback } from 'react-native';
-
+import axios from 'axios';
 
 
 
@@ -9,26 +9,41 @@ export default function ListProductScreen({navigation, route }) {
   const [products,setProducts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    const fetchDataProduct = async () => {
-      try {
-        const response = await fetch('https://test5.nhathuoc.store/api/products/show');
-        const result = await response.json();
 
-        const data = result.data;
-        
-        const filteredResults = data.filter((product) => product.name.toLowerCase().includes(keySearch.toLowerCase()));
+  const Getdata = async() =>{
+    try{
+      const res = await axios.get(`https://test5.nhathuoc.store/api/products/show-for-app`)
+      return res.data.data
+    }catch(error){
+      console.error("e",error)
+    }
 
-        setProducts(filteredResults);
-        setLoading(false);
-        console.log(products);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setLoading(false);
-      }
+  }
+
+  React.useEffect( () => {
+    const fetchData = async () => {
+      const data = await Getdata();
+      console.log("Data:", keySearch);
+
+      const product_search = data.filter(
+        (product)=>{
+            product_name = product.name.trim().toUpperCase().normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+            console.log("product",product_name.indexOf(keySearch.trim().toUpperCase()))
+          
+          if(product_name.indexOf(keySearch.trim().toUpperCase()) > - 1){
+            console.log("a",product)
+            return product;
+          }
+          return;
+        }
+      )
+      console.log("product_search",product_search)
+      setProducts(product_search)
     };
-
-    fetchDataProduct();
+    fetchData();
+    
   }, []);
 
 

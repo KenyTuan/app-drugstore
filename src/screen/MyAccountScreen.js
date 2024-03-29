@@ -3,14 +3,13 @@ import { Modal,Pressable,View, Text, StyleSheet, TouchableOpacity, Touchable, To
 import { Ionicons, AntDesign, MaterialIcons, FontAwesome   } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { Linking } from 'react-native';
+import axios from 'axios';
 
 export default function MyAccountScreen({ navigation, route }) {
   const [token,setToken] = React.useState()
   const [user, setUser] = React.useState({})
   const [success, setSuccess] = React.useState(false)
   const [formSuccess, setFormSucess] = React.useState('');
-
 
   const readToken = async () => {
     try {
@@ -21,64 +20,62 @@ export default function MyAccountScreen({ navigation, route }) {
       return null;
     }
   };
-  
-  async function getData(url) {
+
+  const fetchData = async () => {
     try {
-      const storedToken = await readToken();
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${storedToken}`,
-        },
-      });
-  
-      console.log(response);
-  
-      // Uncomment the error handling if needed
-      // if (!response.ok) {
-      //   throw new Error('Failed to fetch data');
-      // }
-  
-      return response.json();
+      const data = await readToken();
+      console.log("data", data);
+        setToken(data);
     } catch (error) {
-      console.error('Error:', error);
-      throw error;
+      console.error('Error fetching data:', error);
+    }
+  };
+  
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+  const Getdata = async() =>{
+    try{
+      const storedToken = await readToken();
+      console.log("data",storedToken)
+
+      if (!!storedToken) {
+        setToken(storedToken); 
+        const res = await axios.get(`https://test5.nhathuoc.store/api/users/profile-for-app`,{
+          headers: {
+            'Authorization': `Bearer ${storedToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+
+        console.log("data",res.data)
+        return res.data
+      }
+    }catch(error){
+      console.error("e",error)
     }
   }
-  
+
   useFocusEffect(
     React.useCallback(() => {
       const fetchData = async () => {
         try {
-          const storedToken = await readToken();
-          setToken(storedToken); // No need to await, as it's synchronous
-          if (storedToken) {
-            const data = await getData('https://test5.nhathuoc.store/api/users/profile');
-            setUser(data.data);
-          }
+            const data = await Getdata();
+            if(!!data){
+              setUser(data.data);
+              return
+            }
         } catch (error) {
           console.error('Error:', error);
         } finally {
           console.log('Màn hình sẽ mất focus');
         }
       };
-  
       fetchData();
-  
     }, [])
   );
   
-  
-  
-
-
-React.useEffect(() => {
-  const storedToken = readToken();
-  setToken(storedToken);
-}, []);
-
-
   async function portData(url) {
     try {
         const response = await fetch(url, {
@@ -88,9 +85,7 @@ React.useEffect(() => {
                 'Authorization': `Bearer ${token}`,
             },
         });
-
       return response.json();
-
     } catch (error) {
         console.error('Error:', error);
         throw error;
@@ -100,28 +95,22 @@ React.useEffect(() => {
   const removeToken = async () => {
     try {
       await AsyncStorage.removeItem('token');
+      fetchData()
       console.log('Token removed successfully');
     } catch (error) {
       console.error('Error removing token:', error);
+
     }
   };
 
   const handleLogOut = async () => {
-    removeToken();
-    
     const response = await portData("https://test5.nhathuoc.store/api/users/logout");
-    console.log(response.status_code)
-
-    if (response.status_code === 200) {
+    removeToken();
+    if (response.status_code == 200) {
       setFormSucess(response.message);
       setSuccess(true);
-      console.log(response.message);
       return;
     }
-
-    const dataRes = response.data
-    console.log(dataRes)
-
   }
 
   return (
@@ -154,7 +143,7 @@ React.useEffect(() => {
               {
                 token && (
                   <Text style={{fontSize: 20, textAlign: "center", color: "#FFF"}}>
-                    {user.fullname}
+                    {user?.fullname}
                   </Text>
                 )
               }
@@ -213,7 +202,6 @@ React.useEffect(() => {
             </View>
           )
         }
-
       </View>
     </View>
   );

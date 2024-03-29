@@ -1,35 +1,38 @@
 import React from 'react'
-import { View, Text, TouchableHighlight, Image, ScrollView, SafeAreaView, TextInput,FlatList} from 'react-native';
+import { View, Text, TouchableHighlight, Image, ScrollView, SafeAreaView, TextInput,FlatList, Modal, Pressable} from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
 export default function HomeScreen({ navigation }) {
-
   const [products,setProducts] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [types,setTypes] = React.useState([]);
+  const [login, setLogin] = React.useState(false)
 
   const Getdata = async() =>{
-    const res = await axios.get(`https://test5.nhathuoc.store/api/products/show`)
-      return res
+    try{
+      const res = await axios.get(`https://test5.nhathuoc.store/api/products/show-for-app`)
+      return res.data
+    }catch(error){
+      console.error("e",error)
+    }
   }
 
-  // React.useEffect(() => {
-  //   async function logMovies() {
-  //     const response = await fetch("https://test5.nhathuoc.store/api/products/show");
-  //     const movies = await response.json();
-  //     console.log(movies);
-  //   }
-  //   logMovies()
-  // }, []);
+  React.useEffect( () => {
+    const fetchData = async () => {
+      const data = await Getdata();
+      console.log("Data:", data);
+      setProducts(data.data)
+    };
+    fetchData();
+    
+  }, []);
 
   // React.useEffect(() => {
-    
-    
-
   //   // const fetchDataProductType = async () => {
   //   //   try {
   //   //     const response = await fetch('https://test5.nhathuoc.store/api/product-types/show');
@@ -49,19 +52,25 @@ export default function HomeScreen({ navigation }) {
   //   // fetchDataProductType();
   // }, []);
 
+  const readToken = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('token');
+      return storedToken;
+    } catch (error) {
+      console.error('Error reading token:', error);
+      return null;
+    }
+  };
 
+  const handleClickCart = async () => {
+    const storedToken = await readToken();
+    if (!storedToken) {
+      setLogin(true)
+      return;
+    }
+    navigation.navigate('ShoppingCart');
+  }
 
-  const data = [
-    { id: '1', title: 'Dược Phẩm' },
-    { id: '2', title: 'Chăm Sóc Sức Khỏe' },
-    { id: '3', title: 'Chăm sóc cá nhân' },
-    { id: '4', title: 'Sản phẩm tiện lợi' },
-    { id: '5', title: 'Thực phẩm chức năng' },
-    { id: '6', title: 'Mẹ và Bé' },
-    { id: '7', title: 'Chăm sóc sắc đẹp' },
-    { id: '8', title: 'Thiết bị y tế' },
-  ];
-  
 
   const renderItem = ({ item }) => (
     <View style={{ width: 100,padding: 10, marginHorizontal: 5, justifyContent: 'center', borderWidth: 0.5, borderBottomColor: '#ccc', borderRadius: 10,backgroundColor: "#0198d7"}}>
@@ -94,6 +103,22 @@ export default function HomeScreen({ navigation }) {
       justifyContent: 'space-between',
       }}>
       <ScrollView >
+      <Modal
+          animationType="slide"
+          transparent={true}
+          visible={login}
+          >
+            <View style={stylesModal.centeredView}>
+              <View style={stylesModal.modalView}>
+                <Text style={stylesModal.modalText}>Bạn Chưa Đăng Nhập!</Text>
+                <Pressable
+                  style={[stylesModal.button, stylesModal.buttonClose]}
+                  onPress={()=>{setLogin(false); navigation.navigate("Login")}}>
+                  <Text style={stylesModal.textStyle}>Đồng ý</Text>
+                </Pressable>
+              </View>
+            </View>
+        </Modal>
       <View style={{
         display: 'flex',
         flexDirection: 'row' , 
@@ -132,13 +157,13 @@ export default function HomeScreen({ navigation }) {
           marginRight: 10,
           }}>
           <TouchableHighlight
-            onPress={() => {navigation.navigate('ShoppingCart');}} 
+            onPress={handleClickCart} 
             style={{
               borderRadius: 10,
             }}>
             <View style={{
               backgroundColor: 'white',
-              paddingRight: 10,
+              paddingRight: 18,
               paddingLeft: 18,
               paddingVertical: 14, 
               borderRadius: 10,
@@ -152,7 +177,7 @@ export default function HomeScreen({ navigation }) {
                 size={24} 
                 color="#0072bc" 
               />
-              <Text style={{
+              {/* <Text style={{
                 color: "white", 
                 fontSize: 13, 
                 fontWeight: "300", 
@@ -164,7 +189,7 @@ export default function HomeScreen({ navigation }) {
                 borderRadius: 25
                 }}>
                   11
-              </Text>
+              </Text> */}
             </View>
           </TouchableHighlight>
         </View>
@@ -252,7 +277,6 @@ export default function HomeScreen({ navigation }) {
                   />
               </View>
             </View>
-            
             <View style={{flex: 1, marginBottom: 10, paddingVertical: 10, borderWidth: 0.8, borderColor: "#ccc"}}>
               <View style={{backgroundColor: "#ccc", padding: 5, paddingLeft: 15, borderRadius: 5,marginBottom: 5}}>
                 <Text style={{fontSize: 25, fontWeight: 500, color: 'red'}}>
@@ -299,3 +323,50 @@ export default function HomeScreen({ navigation }) {
   )
 }
 
+const stylesModal = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+    paddingHorizontal: 35
+  },
+  buttonOpen: {
+    backgroundColor: '#F194FF',
+  },
+  buttonClose: {
+    backgroundColor: '#2196F3',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 22
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 22
+  },
+});

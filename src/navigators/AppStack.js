@@ -20,6 +20,9 @@ import ProfileScreen from '../screen/ProfileScreen';
 import LoginScreen from '../screen/LoginScreen';
 import RegisterScreen from '../screen/RegisterScreen';
 import headerSearch from '../header/HeaderSearch';
+import ChossenAddress from '../screen/ChossenAddress'
+import UpdateProfile from '../screen/UpdateProfile';
+import SelectedAddress from '../screen/SelectedAddress';
 
 const Stack = createStackNavigator();
 
@@ -78,22 +81,7 @@ const headerListProduct = () => {
                 </View>
                 </TouchableHighlight>
             </View>
-            <View style={{
-                    width: "14%",
-                    justifyContent: "center",
-                    alignItems: 'center'
-                }}>
-                    <TouchableHighlight onPress={openFilter}>
-                        <View style={{}}>
-                            <AntDesign 
-                                name="filter" 
-                                size={24} 
-                                color="#0198d7" 
-                            />
-                        </View>
-                    </TouchableHighlight>
-                    <ModalFilter isVisible={isFilterVisible} eventClose={closeFilter}/>
-            </View>
+            
         </View>
     )
 }
@@ -155,6 +143,13 @@ const AppStack = () => {
                 name="Address" 
                 component={ListAddressScreen} 
                 options={{
+                    title: "Thông tin nhận hàng", 
+                }}
+            />
+            <Stack.Screen 
+                name="ChossenAddress" 
+                component={ChossenAddress} 
+                options={{
                     title: "Chọn địa chỉ nhận hàng", 
                 }}
             />
@@ -175,6 +170,13 @@ const AppStack = () => {
             <Stack.Screen 
                 name="ChooseArea" 
                 component={AreaScreen} 
+                options={{
+                    title: "Chọn Khu Vực", 
+                }}
+            />
+            <Stack.Screen 
+                name="ChooseEditArea" 
+                component={SelectedAddress} 
                 options={{
                     title: "Chọn Khu Vực", 
                 }}
@@ -205,6 +207,13 @@ const AppStack = () => {
                 component={RegisterScreen} 
                 options={{
                     headerShown: false,  
+                }}
+            />
+            <Stack.Screen 
+                name="UpdateProfile" 
+                component={UpdateProfile} 
+                options={{
+                    title: "Cập Nhật Tài Khoản", 
                 }}
             />
         </Stack.Navigator>
